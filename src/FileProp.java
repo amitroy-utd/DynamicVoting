@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -22,6 +23,8 @@ public class FileProp implements Serializable{
 	int i;
 	public static long timer=30000;
 	public static Map<String, FileAttributes> list_files=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
+	public static Map<String, FileAttributes> shared_read=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
+	public static Map<String, FileAttributes> exclusive_write=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
 		
 	public void readNodeDetails(int nodeId, String topology)
 	{
@@ -61,8 +64,6 @@ public class FileProp implements Serializable{
 	}
 	
 	public void readFileInformation(){
-		Map<String, FileAttributes> shared_read=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
-		Map<String, FileAttributes> exclusive_write=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
 		
 		
 		//Populate for common Map		
@@ -71,7 +72,7 @@ public class FileProp implements Serializable{
 				
 					for (File file : files) {
 				    if (file.isFile()) {
-				    	FileAttributes fileattr = new FileAttributes(file.getName(),NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0);
+				    	FileAttributes fileattr = new FileAttributes(9,file.getName(),NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
 				    	list_files.put(file.getName(),fileattr);
 				    }
 				}
