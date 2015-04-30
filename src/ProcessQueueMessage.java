@@ -8,7 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ProcessQueueMessage extends Thread
 
 {
-	int NodeID;
+	//int NodeID;
 	public static CopyOnWriteArrayList<MessageStruct> bufferResponse=new CopyOnWriteArrayList<MessageStruct>();	
 	public static CopyOnWriteArrayList<MessageStruct> bufferRequest=new CopyOnWriteArrayList<MessageStruct>();
 
@@ -123,7 +123,7 @@ public class ProcessQueueMessage extends Thread
 	        						
 	        						
 	        						//                   MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
-	        						MessageStruct ms=new MessageStruct(processObject.reqID,2,NodeID,processObject.locktype,processObject.filename);
+	        						MessageStruct ms=new MessageStruct(processObject.reqID,2,Project3.CurrentNodeId,processObject.locktype,processObject.filename);
 	        				    	try
 	        				    	{
 	        				    		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
@@ -227,7 +227,7 @@ public class ProcessQueueMessage extends Thread
 	        					 
 	        					 // replace the file with file received
 	        					 
-	        					 Path file_path = Paths.get("D:\\Studies\\Perl", processObject.filename+"_"+FileProp.NodeID+"_"+"temp");
+	        /*change path*/		 Path file_path = Paths.get("D:\\Studies\\Perl", processObject.filename);
 	        					 try
 	        					 {
 	        						 Files.write(file_path, processObject.contents);
@@ -243,14 +243,54 @@ public class ProcessQueueMessage extends Thread
 	        		 }
 	        		 else if (processObject.msgType == 4) // message received is send the file
 	        		 {
-	                	//fetch the file and send the contents 
-	                	
+	                	//fetch the file and send the contents  
+	        			 if(FileProp.list_files.containsKey(processObject.filename))
+	        			 {
+	        				 Path file_path = Paths.get("add the path", processObject.filename);
+	    					 try
+	    					 {
+	    						 byte[] local_content =  Files.readAllBytes(file_path);
+	    						 String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
+	    							
+	    							
+	    						//MessageStruct( int reqID, int msgType, int nodeid, String Filename, byte[] contents)
+	    							
+	    						MessageStruct ms=new MessageStruct(processObject.reqID,5,Project3.CurrentNodeId,processObject.filename,local_content);
+	    					    try
+	    					    {
+	    					    	new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
+	    					    }
+	    					    catch (Exception e)
+	    					    {
+	    					    	e.printStackTrace();
+	    					    }
+	    						 
+	    					 }
+	    					 catch (Exception e)
+	    					 {
+	    						 e.printStackTrace();
+	    					 }
+	        			 }
+	        			 
 	                	
 	        		 }
 	        		 else if (processObject.msgType == 5) // Received the file
 	        		 {
 	                	
-	                	
+	        			 if(FileProp.list_files.containsKey(processObject.filename))
+	        			 {
+	        				 Path file_path = Paths.get("add the path", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
+	    					 try
+	    					 {
+	    						Files.write(file_path, processObject.contents);
+	    						 
+	    					 }
+	    					 catch (Exception e)
+	    					 {
+	    						 e.printStackTrace();
+	    					 }
+	        			 }
+	        			 
 	                	
 	        		 }
 	        		 else
@@ -285,7 +325,7 @@ public class ProcessQueueMessage extends Thread
 						
 		//MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
 		
-		MessageStruct ms=new MessageStruct(processObject.reqID,1,NodeID,0,processObject.filename,current_node_file_object,current_node_file_object.verNum);
+		MessageStruct ms=new MessageStruct(processObject.reqID,1,Project3.CurrentNodeId,0,processObject.filename,current_node_file_object,current_node_file_object.verNum);
     	try
     	{
     		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
@@ -315,7 +355,7 @@ public class ProcessQueueMessage extends Thread
 						
 		//MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
 		
-		MessageStruct ms=new MessageStruct(processObject.reqID,1,NodeID,1,processObject.filename,current_node_file_object,current_node_file_object.verNum);
+		MessageStruct ms=new MessageStruct(processObject.reqID,1,Project3.CurrentNodeId,1,processObject.filename,current_node_file_object,current_node_file_object.verNum);
     	try
     	{
     		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
