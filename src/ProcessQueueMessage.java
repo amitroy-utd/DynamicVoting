@@ -1,4 +1,7 @@
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -224,8 +227,15 @@ public class ProcessQueueMessage extends Thread
 	        					 
 	        					 // replace the file with file received
 	        					 
-	        					 
-	        					 
+	        					 Path file_path = Paths.get("D:\\Studies\\Perl", processObject.filename+"_"+FileProp.NodeID+"_"+"temp");
+	        					 try
+	        					 {
+	        						 Files.write(file_path, processObject.contents);
+	        					 }
+	        					 catch (Exception e)
+	        					 {
+	        						 e.printStackTrace();
+	        					 }
 	        				 }
 	        			 
 	                	
@@ -275,7 +285,7 @@ public class ProcessQueueMessage extends Thread
 						
 		//MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
 		
-		MessageStruct ms=new MessageStruct(processObject.reqID,1,NodeID,0,processObject.filename,current_node_file_object,current_node_file_object.verNum,current_node_file_object.RU);
+		MessageStruct ms=new MessageStruct(processObject.reqID,1,NodeID,0,processObject.filename,current_node_file_object,current_node_file_object.verNum);
     	try
     	{
     		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
@@ -305,7 +315,7 @@ public class ProcessQueueMessage extends Thread
 						
 		//MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
 		
-		MessageStruct ms=new MessageStruct(processObject.reqID,1,NodeID,1,processObject.filename,current_node_file_object,current_node_file_object.verNum,current_node_file_object.RU);
+		MessageStruct ms=new MessageStruct(processObject.reqID,1,NodeID,1,processObject.filename,current_node_file_object,current_node_file_object.verNum);
     	try
     	{
     		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
