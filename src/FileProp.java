@@ -12,7 +12,7 @@ import java.util.TreeMap;
 public class FileProp implements Serializable{
 	private static final long serialVersionUID = 1L;
 	public static Map<Integer, String> map=new HashMap<Integer, String>();	
-	public  int NodeID;
+	public  static int NodeID;
 	public  int num_files = 0;
 	public  int num_operations = 0;
 	public  int mean_delay=0;
