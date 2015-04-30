@@ -67,7 +67,7 @@ class MessageStruct implements Serializable
     public  MessageStruct( int reqID, int msgType, int nodeid, String Filename, byte[] contents)
     {
        this.reqID=reqID;
-       this.msgType=msgType;
+       this.msgType=msgType;http://coq.inria.fr/V8.2pl1/refman/Reference-Manual004.html
        this.nodeid=nodeid;
        this.filename=Filename;
        this.contents=contents;
