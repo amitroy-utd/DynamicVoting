@@ -1,7 +1,7 @@
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 
@@ -13,6 +13,7 @@ public class Protocol {
 		final int msgType=1;
 		final String filename=fa.filename;
 	    final int verNum=fa.verNum;	
+	    
 		FileProp.reqID=FileProp.reqID+1;
 		
 		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
@@ -25,7 +26,7 @@ public class Protocol {
 					{
 						try {
 				        	//System.out.println("starting client");
-		/* need to change */ FileAttributes fb=new FileAttributes(filename,NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0);
+		/* need to change */ FileAttributes fb=new FileAttributes(9,filename,NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
 							final MessageStruct ms=new MessageStruct(FileProp.reqID,msgType,NodeID,locktype,filename,fb,verNum);
 			            	//added
 			            	ObjectOutputStream out = null;
@@ -33,12 +34,11 @@ public class Protocol {
 	             
 	            			out = new ObjectOutputStream(socket.getOutputStream());
 	            			out.writeObject(ms);
-	            			//System.out.println("wrote to server"+obj+"ipadd and port"+IPAddress+port);
+	            			
 	            			
 	            			out.flush();
 	            			out.close();
-			            	//added
-	            			//new ClientDemo().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
+			            	
 						} catch (Exception e) {
 							System.out.println("Something falied: " + e.getMessage());
 							e.printStackTrace();
