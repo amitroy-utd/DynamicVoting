@@ -13,6 +13,7 @@ class MessageStruct implements Serializable
     int verNum;
     int RU;
     FileAttributes faobj;
+    byte[] contents;
     
     
     public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
@@ -28,7 +29,7 @@ class MessageStruct implements Serializable
     }
     
     //for release message
-    public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum, int RU)
+    public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum, int RU,byte[] contents)
     {
        this.reqID=reqID;
        this.msgType=msgType;
@@ -38,6 +39,7 @@ class MessageStruct implements Serializable
        this.filename=Filename;
        this.verNum=verNum;
        this.RU=RU;
+       this.contents=contents;
     }
     
     //for abort message
@@ -48,6 +50,27 @@ class MessageStruct implements Serializable
        this.nodeid=nodeid;
        this.locktype=locktype;
        this.filename=Filename;
+       
+    }
+    
+    //sendfile
+    public  MessageStruct( int reqID, int msgType, int nodeid, String Filename)
+    {
+       this.reqID=reqID;
+       this.msgType=msgType;
+       this.nodeid=nodeid;
+       this.filename=Filename;
+       
+    }
+    
+    //receive file
+    public  MessageStruct( int reqID, int msgType, int nodeid, String Filename, byte[] contents)
+    {
+       this.reqID=reqID;
+       this.msgType=msgType;
+       this.nodeid=nodeid;
+       this.filename=Filename;
+       this.contents=contents;
        
     }
    
