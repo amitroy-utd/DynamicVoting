@@ -4,6 +4,8 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
  
  
 public class Server implements Serializable {
@@ -12,11 +14,13 @@ public class Server implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	public static BlockingQueue<MessageStruct> unbounded = new LinkedBlockingQueue<MessageStruct>();
+	
 	ServerSocket myServerSocket;
     boolean ServerOn = true;
  
  
-    public Server(final int portnum) 
+    public Server(final int portnum) throws ClassNotFoundException 
     { 
         try
         { 
@@ -43,15 +47,27 @@ public class Server implements Serializable {
                 // If execution reaches this point, then it means that a client 
                 // socket has been accepted. 
  
-                // For each client, we will start a service thread to 
-                // service the client requests. This is to demonstrate a 
-                // Multi-Threaded server. Starting a thread also lets our 
-                // MultiThreadedSocket Server accept multiple connections simultaneously. 
+                // For each client, the received object is added onto a linkedblocking queue
+                // ProcessQueMessage thread reads from this queue and processes each request in 
+                // a thread
+                
+                
+                
+                                               
+                ObjectInputStream in = null;
+                in = new ObjectInputStream(clientSocket.getInputStream());
+    			Object obj = in.readObject();
+    			
+    				
+    			MessageStruct msgrcvd = null;
+                    
+    			msgrcvd = (MessageStruct) obj;
+    			unbounded.add(msgrcvd);
+                in.close();
+                
  
-                // Start a Service thread 
- 
-                ClientServiceThread cliThread = new ClientServiceThread(clientSocket);
-                cliThread.start(); 
+               // ClientServiceThread cliThread = new ClientServiceThread(clientSocket);
+                //cliThread.start(); 
  
             } 
             catch(IOException ioe) 
@@ -78,7 +94,7 @@ public class Server implements Serializable {
     } 
  
   
- 
+ /*
     class ClientServiceThread extends Thread 
     { 
         Socket myClientSocket;
@@ -145,5 +161,5 @@ public class Server implements Serializable {
            
         } 
        	
-    } 
+    } */
 }
