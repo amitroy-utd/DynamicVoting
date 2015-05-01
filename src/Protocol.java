@@ -7,11 +7,15 @@ import java.util.Map;
 
 public class Protocol {
 	static Socket socket = null;
-	int current_reqid=0;
-	public void sendLockRequest(final int locktype, final String filename, int reqID)
+	static int current_reqid=0;
+	static int locktype=9;
+	static String filename="";
+	public void sendLockRequest(final int lock_type, final String file_name, int reqID)
 	{
 		final int msgType=0;
 		current_reqid=reqID;	
+		locktype=lock_type;
+		filename=file_name;
 		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
 		{
 			final int NodeID = entry.getKey();
@@ -23,7 +27,7 @@ public class Protocol {
 						try {
 				        	FileAttributes fb=FileProp.list_files.get(filename);
 							fb.currentReqID=current_reqid;
-							final MessageStruct ms=new MessageStruct(current_reqid,msgType,NodeID,locktype,filename);
+							final MessageStruct ms=new MessageStruct(current_reqid,msgType,FileProp.NodeID,locktype,filename);
 			            	//added
 			            	ObjectOutputStream out = null;
 	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
@@ -57,20 +61,32 @@ public class Protocol {
 		}
 	}
 	
-	public void checkQuorumMembers(int locktype, FileAttributes fa){
-			 ArrayList<MessageStruct> responsearray=new ArrayList<MessageStruct>();	
-			 FileAttributes fas_obj=FileProp.list_files.get(fa.filename);
-			 for (MessageStruct ms : responsearray) {
+	public void checkQuorumMembers(){
+			 //ArrayList<MessageStruct> responsearray=new ArrayList<MessageStruct>();	
+			 //responsearray=ProcessQueueMessage.bufferResponse;
+		
+			 FileAttributes fas_obj=FileProp.list_files.get(filename);			 
+			 fas_obj.currentReqID=0;
+			 for (MessageStruct ms : ProcessQueueMessage.bufferResponse) 
+			 {
 				 // check lock ms.locktype==locktype
 				 //check FileProp.reqID=ms.reqID
 				 //check filename=ms.filename
-				 fas_obj.P.add(ms.faobj);			
-
-				 
-		        }
+				 if(ms.locktype==locktype && filename.equals(ms.filename) && ms.reqID==current_reqid)
+				 {
+					 fas_obj.P.add(ms.faobj);
+				 }				 					 
+		     }
+			 ProcessQueueMessage.bufferResponse.clear();
 			 fas_obj.M=getMaxVersionNumber(fas_obj);
 			 fas_obj.Q=getQset(fas_obj);
 			 fas_obj.RU=fas_obj.Q.get(0).RU;
+			 int quorun_result=calculateQuorum(fas_obj.RU,fas_obj.Q.size());
+			 if(quorun_result==0){
+				 sendAbort(fas_obj.P);
+				 
+			 }
+			 		 
 			
 	}
 	
@@ -97,6 +113,53 @@ public class Protocol {
 			}			
 		}
 		return al;
+	}
+	
+	public static int calculateQuorum(int ru,int q_size){
+		int Q_val=0;
+		Q_val=ru/2;
+		if(Q_val>q_size)
+		{
+			return 1;
+		}
+		else if(Q_val==q_size){
+			return 2;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	
+	public static void sendAbort(ArrayList<FileAttributes> P){
+		for(FileAttributes p_obj:P){
+			String value=FileProp.map.get(p_obj.nodeid);
+			final String []nodeNetInfo=value.split(":");
+			Thread t = new Thread(new Runnable() {
+					public void run()
+					{
+						try {
+				        	final MessageStruct ms=new MessageStruct(current_reqid,2,FileProp.NodeID,locktype,filename);
+			            	//added
+			            	ObjectOutputStream out = null;
+	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
+	             
+	            			out = new ObjectOutputStream(socket.getOutputStream());
+	            			out.writeObject(ms);
+	            			
+	            			
+	            			out.flush();
+	            			out.close();
+			            	
+						} catch (Exception e) {
+							System.out.println("Something falied: " + e.getMessage());
+							e.printStackTrace();
+						}
+					
+					}
+				});
+			t.start();
+		}
 	}
 
 }
