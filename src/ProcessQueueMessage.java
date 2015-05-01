@@ -170,7 +170,7 @@ public class ProcessQueueMessage extends Thread
 	        						}
 	        						
 	        					}
-	        					FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        					//FileProp.list_files.put(processObject.filename, current_node_file_object1);
              			}
 	        			 
 	                	
@@ -200,7 +200,7 @@ public class ProcessQueueMessage extends Thread
 	        						 
 	        						 
 	        					 }
-	        					 FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        					 //FileProp.list_files.put(processObject.filename, current_node_file_object1);
 	        				 }
 	        				 else if(processObject.locktype==1)
 	        				 {
@@ -223,7 +223,7 @@ public class ProcessQueueMessage extends Thread
 	        						 }
 	        						 
 	        					 }
-	        					 FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        					 //FileProp.list_files.put(processObject.filename, current_node_file_object1);
 	        					 
 	        					 // replace the file with file received
 	        					 
@@ -317,7 +317,7 @@ public class ProcessQueueMessage extends Thread
 		current_node_file_object.requestNodeList.add(processObject.reqID+"-"+processObject.nodeid);
 		
 		//update the list file list with updated attributes
-		FileProp.list_files.put(processObject.filename, current_node_file_object);
+		//FileProp.list_files.put(processObject.filename, current_node_file_object);
 		FileProp.shared_read.put(processObject.filename, current_node_file_object);
 		//get the host id and port number
 		String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
@@ -347,7 +347,7 @@ public class ProcessQueueMessage extends Thread
 		current_node_file_object.requestNodeList.add(processObject.reqID+"-"+processObject.nodeid);
 		
 		//update the list file list with updated attributes
-		FileProp.list_files.put(processObject.filename, current_node_file_object);
+		//FileProp.list_files.put(processObject.filename, current_node_file_object);
 		FileProp.exclusive_write.put(processObject.filename, current_node_file_object);
 		//get the host id and port number
 		String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
