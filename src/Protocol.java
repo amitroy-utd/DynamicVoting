@@ -198,5 +198,17 @@ public class Protocol {
 			}
 		}
 	}
+	
+	public void do_file_operation(String filename, int locktype) throws Exception
+	{
+		
+		//read the file or write into the file
+		
+		FileReadingWriting.FileOperation(Project3.CurrentNodeId, filename, locktype,"log.txt");
+		//send release message 
+		send_release_message();
+		file_action_leave();
+		
+	}
 
 }
