@@ -15,7 +15,7 @@ class MessageStruct implements Serializable
     FileAttributes faobj;
     byte[] contents;
     
-    
+    // for response
     public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
     {
        this.reqID=reqID;
@@ -42,7 +42,7 @@ class MessageStruct implements Serializable
        this.contents=contents;
     }
     
-    //for abort message
+    //for abort and lock message
     public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename)
     {
        this.reqID=reqID;
@@ -73,5 +73,7 @@ class MessageStruct implements Serializable
        this.contents=contents;
        
     }
+    
+ 
    
 }

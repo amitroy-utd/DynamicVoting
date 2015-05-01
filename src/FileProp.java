@@ -19,7 +19,7 @@ public class FileProp implements Serializable{
 	public  int fraction_read =0;
 	public  static int min_wait =0;
 	public  static int max_wait =0;
-	public  static int reqID =0;
+	//public  static int reqID =0;
 	int i;
 	public static long timer=30000;
 	public static Map<String, FileAttributes> list_files=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
@@ -72,7 +72,7 @@ public class FileProp implements Serializable{
 				
 					for (File file : files) {
 				    if (file.isFile()) {
-				    	FileAttributes fileattr = new FileAttributes(99999999,file.getName(),NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
+				    	FileAttributes fileattr = new FileAttributes(0,file.getName(),NodeID,0,map.size(),0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
 				    	list_files.put(file.getName(),fileattr);
 				    }
 				}

@@ -7,15 +7,11 @@ import java.util.Map;
 
 public class Protocol {
 	static Socket socket = null;
-	
-	public void sendLockRequest(final int locktype, FileAttributes fa)
+	int current_reqid=0;
+	public void sendLockRequest(final int locktype, final String filename, int reqID)
 	{
-		final int msgType=1;
-		final String filename=fa.filename;
-	    final int verNum=fa.verNum;	
-	    
-		FileProp.reqID=FileProp.reqID+1;
-		
+		final int msgType=0;
+		current_reqid=reqID;	
 		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
 		{
 			final int NodeID = entry.getKey();
@@ -25,9 +21,9 @@ public class Protocol {
 					public void run()
 					{
 						try {
-				        	//System.out.println("starting client");
-		/* need to change */ FileAttributes fb=new FileAttributes(9,filename,NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
-							final MessageStruct ms=new MessageStruct(FileProp.reqID,msgType,NodeID,locktype,filename,fb,verNum);
+				        	FileAttributes fb=FileProp.list_files.get(filename);
+							fb.currentReqID=current_reqid;
+							final MessageStruct ms=new MessageStruct(current_reqid,msgType,NodeID,locktype,filename);
 			            	//added
 			            	ObjectOutputStream out = null;
 	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
