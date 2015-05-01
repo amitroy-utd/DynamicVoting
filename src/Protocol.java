@@ -1,5 +1,8 @@
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -93,7 +96,15 @@ public class Protocol {
 			 }
 			 else if(quorun_result==1 || quorun_result==2)
 			 {
-				 
+				 // check for stale copy and send file
+				 byte [] contents=null;
+				 try {
+					contents=do_file_operation(filename, locktype);
+					send_release_message(fas_obj.P,contents);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			 }
 			
 	}
@@ -199,16 +210,58 @@ public class Protocol {
 		}
 	}
 	
-	public void do_file_operation(String filename, int locktype) throws Exception
-	{
-		
+	public byte [] do_file_operation(String filename, int locktype) throws Exception
+	{		
 		//read the file or write into the file
 		
 		FileReadingWriting.FileOperation(Project3.CurrentNodeId, filename, locktype,"log.txt");
+		Path file_path = Paths.get("./"+FileProp.NodeID+"/", filename);
+		byte[] local_content=null;
+        try
+        {
+             local_content =  Files.readAllBytes(file_path);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 		//send release message 
-		send_release_message();
-		file_action_leave();
-		
+		//send_release_message();
+		//file_action_leave();
+		return local_content;
+	}
+	
+	public void send_release_message(ArrayList<FileAttributes> P,final byte [] content){
+		for(FileAttributes p_obj:P){
+			String value=FileProp.map.get(p_obj.nodeid);
+			final FileAttributes fab=FileProp.list_files.get(filename);
+			final String []nodeNetInfo=value.split(":");
+			Thread t = new Thread(new Runnable() {
+					public void run()
+					{
+						try {
+							
+				        	final MessageStruct ms=new MessageStruct(current_reqid,3,FileProp.NodeID,locktype,filename,fab,content);
+			            	//added
+			            	ObjectOutputStream out = null;
+	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
+	             
+	            			out = new ObjectOutputStream(socket.getOutputStream());
+	            			out.writeObject(ms);
+	            			
+	            			
+	            			out.flush();
+	            			out.close();
+			            	
+						} catch (Exception e) {
+							System.out.println("Something falied: " + e.getMessage());
+							e.printStackTrace();
+						}
+					
+					}
+				});
+			t.start();
+		}
 	}
 
 }

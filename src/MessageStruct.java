@@ -29,7 +29,7 @@ class MessageStruct implements Serializable
     }
     
     //for release message
-    public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum, int RU,byte[] contents)
+    public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, byte[] contents)
     {
        this.reqID=reqID;
        this.msgType=msgType;
