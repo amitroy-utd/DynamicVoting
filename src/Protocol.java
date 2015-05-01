@@ -10,12 +10,14 @@ public class Protocol {
 	static int current_reqid=0;
 	static int locktype=9;
 	static String filename="";
-	public void sendLockRequest(final int lock_type, final String file_name, int reqID)
+	static int waitingtime=0;
+	public void sendLockRequest(final int lock_type, final String file_name, int reqID,int waiting_time)
 	{
 		final int msgType=0;
 		current_reqid=reqID;	
 		locktype=lock_type;
 		filename=file_name;
+		waitingtime=waiting_time;
 		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
 		{
 			final int NodeID = entry.getKey();
@@ -48,6 +50,9 @@ public class Protocol {
 				});
 			t.start(); 
 		}
+		startTimer();
+		checkQuorumMembers();
+		
 	}
 	
 	
@@ -84,9 +89,12 @@ public class Protocol {
 			 int quorun_result=calculateQuorum(fas_obj.RU,fas_obj.Q.size());
 			 if(quorun_result==0){
 				 sendAbort(fas_obj.P);
+				 handleAbort(current_reqid,locktype, filename, waitingtime);				 
+			 }
+			 else if(quorun_result==1 || quorun_result==2)
+			 {
 				 
 			 }
-			 		 
 			
 	}
 	
