@@ -209,9 +209,9 @@ public class ProcessQueueMessage extends Thread
 	    	        			 //when a release message is received for a write lock, updation of the file attributes like version number ,no of copies updated and updation of the file needs to be done
 	        					 FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
 	        					 current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
-	        					 current_node_file_object1.verNum = processObject.verNum;
+	        					 current_node_file_object1.verNum = processObject.faobj.verNum;
 	        					 //number of copies updated
-	        					 current_node_file_object1.RU = processObject.RU;
+	        					 current_node_file_object1.RU = processObject.faobj.RU;
 	        					 
 	        					 if (current_node_file_object1.requestNodeList.isEmpty())
 	        					 {
