@@ -132,7 +132,7 @@ public class ProcessQueueMessage extends Thread
 	        				    	{
 	        				    		e.printStackTrace();
 	        				    	}
-	        						//ignore the request assuming 
+	        						
 	        						
 	        					}
                 			}
@@ -227,7 +227,7 @@ public class ProcessQueueMessage extends Thread
 	        					 
 	        					 // replace the file with file received
 	        					 
-	        /*change path*/		 Path file_path = Paths.get("D:\\Studies\\Perl", processObject.filename);
+	        /*change path*/		 Path file_path = Paths.get("./", processObject.filename);
 	        					 try
 	        					 {
 	        						 Files.write(file_path, processObject.contents);
@@ -279,7 +279,7 @@ public class ProcessQueueMessage extends Thread
 	                	
 	        			 if(FileProp.list_files.containsKey(processObject.filename))
 	        			 {
-	        				 Path file_path = Paths.get("add the path", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
+/*change path*/				 Path file_path = Paths.get("./", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
 	    					 try
 	    					 {
 	    						Files.write(file_path, processObject.contents);
