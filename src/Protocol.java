@@ -161,5 +161,34 @@ public class Protocol {
 			t.start();
 		}
 	}
+	
+	public void handleAbort(int reqID, int locktype, String filename, int waiting_time)
+	{
+		//This function is called if the required Quorum is not got.
+		// This function retries the same message after waiting for min_wait time
+		// and tries doing so until the max wait time is reached
+		
+		//sleep for the minimum wait time
+		if (waiting_time >= FileProp.max_wait)
+		{
+			//stop the retry and exit from the function
+		}
+		else
+		{
+			try
+			{
+				
+				//retry the same message after wait time (exponential back off)
+				Thread.sleep(waiting_time);
+		
+				sendLockRequest(locktype, filename,reqID,2*waiting_time);
+		
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
 
 }
