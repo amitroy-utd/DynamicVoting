@@ -72,7 +72,7 @@ public class FileProp implements Serializable{
 				
 					for (File file : files) {
 				    if (file.isFile()) {
-				    	FileAttributes fileattr = new FileAttributes(99999999,file.getName(),NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
+				    	FileAttributes fileattr = new FileAttributes(0,file.getName(),NodeID,0,0,0,new ArrayList<FileAttributes>(),new ArrayList<FileAttributes>(),9,0,new HashSet<String>());
 				    	list_files.put(file.getName(),fileattr);
 				    }
 				}
