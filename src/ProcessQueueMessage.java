@@ -155,29 +155,39 @@ public class ProcessQueueMessage extends Thread
 	        			 
 	        			 if (FileProp.list_files.containsKey(processObject.filename))
              			{
+	        				 //if the abort message is received for a request present in request queue,it means it was not processed still
+	        				 
+	        				 	if (bufferRequest.containsKey(processObject.nodeid+"_"+processObject.filename))
+	        				 	{
+	        				 		bufferRequest.remove(processObject.nodeid+"_"+processObject.filename);
+	        				 	}
+	        				 	//if the abort message is not in the request then it means it was processed, hence has to be removed from the file attributes
+	        				 	
+	        				 	else
+	        				 	{
 	        					
-	        					FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
-	        					current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
-	        					
-	        					if (current_node_file_object1.requestNodeList.isEmpty())
-	        					{
-	        						current_node_file_object1.locktype=9;
+	        				 		FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
+	        				 		current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
+	        				 		
+	        				 		if (current_node_file_object1.requestNodeList.isEmpty())
+	        				 		{
+	        				 			current_node_file_object1.locktype=9;
+	        				 			
+	        				 			//lock is free hence release from shared mode list or exclusive mode list
+	        				 			if(FileProp.shared_read.containsKey(processObject.filename))
+	        				 			{
+	        				 				FileProp.shared_read.remove(processObject.filename);
+	        				 			}	
+	        				 			else if(FileProp.exclusive_write.containsKey(processObject.filename))
+	        				 			{
+	        				 				FileProp.exclusive_write.remove(processObject.filename);
+	        				 			}
 	        						
-	        						//lock is free hence release from shared mode list or exclusive mode list
-	        						if(FileProp.shared_read.containsKey(processObject.filename))
-	        						{
-	        							FileProp.shared_read.remove(processObject.filename);
-	        						}
-	        						else if(FileProp.exclusive_write.containsKey(processObject.filename))
-	        						{
-	        							FileProp.exclusive_write.remove(processObject.filename);
-	        						}
-	        						
-	        					}
-	        					//FileProp.list_files.put(processObject.filename, current_node_file_object1);
-             			}
+	        				 		}
+	        				 		//FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        				 	}
 	        			 
-	                	
+             			}
 	                	
 	        		 }
 	        		 else if (processObject.msgType == 3) // message received is release
