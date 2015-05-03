@@ -17,55 +17,61 @@ public class Protocol {
 	static int waitingtime=0;
 	public void sendLockRequest(final int lock_type, final String file_name, int reqID,int waiting_time)
 	{
-		final int msgType=0;
-		current_reqid=reqID;	
-		locktype=lock_type;
-		filename=file_name;
-		waitingtime=waiting_time;
+		while(true){
 		FileAttributes fb=FileProp.list_files.get(filename);
-		fb.currentReqID=current_reqid;
-		fb.locktype=locktype;
-		if(locktype==0){
-			FileProp.shared_read.put(filename, fb);
-		}
-		else
-		{
-			FileProp.exclusive_write.put(filename,fb);
-		}
-		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
-		{
-			final int NodeID = entry.getKey();
-			final String value = entry.getValue();
-			final String []nodeNetInfo=value.split(":");
-			Thread t = new Thread(new Runnable() {
-					public void run()
-					{
-						try {
-				        								
-							final MessageStruct ms=new MessageStruct(current_reqid,msgType,FileProp.NodeID,locktype,filename);
-			            	//added
-			            	ObjectOutputStream out = null;
-	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
-	             
-	            			out = new ObjectOutputStream(socket.getOutputStream());
-	            			out.writeObject(ms);
-	            			
-	            			
-	            			out.flush();
-	            			out.close();
-			            	
-						} catch (Exception e) {
-							System.out.println("Something falied: " + e.getMessage());
-							e.printStackTrace();
+		if(fb.locktype!=1)
+		{		
+			final int msgType=0;
+			current_reqid=reqID;	
+			locktype=lock_type;
+			filename=file_name;
+			waitingtime=waiting_time;
+			
+			fb.currentReqID=current_reqid;
+			fb.locktype=locktype;
+			if(locktype==0){
+				FileProp.shared_read.put(filename, fb);
+			}
+			else
+			{
+				FileProp.exclusive_write.put(filename,fb);
+			}
+			for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
+			{
+				final int NodeID = entry.getKey();
+				final String value = entry.getValue();
+				final String []nodeNetInfo=value.split(":");
+				Thread t = new Thread(new Runnable() {
+						public void run()
+						{
+							try {
+					        								
+								final MessageStruct ms=new MessageStruct(current_reqid,msgType,FileProp.NodeID,locktype,filename);
+				            	//added
+				            	ObjectOutputStream out = null;
+		            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
+		             
+		            			out = new ObjectOutputStream(socket.getOutputStream());
+		            			out.writeObject(ms);
+		            			
+		            			
+		            			out.flush();
+		            			out.close();
+				            	
+							} catch (Exception e) {
+								System.out.println("Something falied: " + e.getMessage());
+								e.printStackTrace();
+							}
+						
 						}
-					
-					}
-				});
-			t.start(); 
+					});
+				t.start(); 
+			}
+			startTimer();
+			checkQuorumMembers();
+			return;
+			}
 		}
-		startTimer();
-		checkQuorumMembers();
-		
 	}
 	
 	
@@ -103,8 +109,7 @@ public class Protocol {
 			 fas_obj.RU=fas_obj.Q.get(0).RU;
 			 int quorun_result=calculateQuorum(fas_obj.RU,fas_obj.Q.size());
 			 if(quorun_result==0){
-				 sendAbort(fas_obj.P);
-				 handleAbort(current_reqid,locktype, filename, waitingtime);	
+				 sendAbort(fas_obj.P);				 	
 				 if(locktype==1){
 					 fas_obj_listfile.locktype=9;
 					 FileProp.exclusive_write.remove(filename);
@@ -117,7 +122,7 @@ public class Protocol {
 						 FileProp.shared_read.remove(filename);
 					 }
 				 }
-				 
+				 handleAbort(current_reqid,locktype, filename, waitingtime);				 
 			 }
 			 else if(quorun_result==1 || quorun_result==2)
 			 {
