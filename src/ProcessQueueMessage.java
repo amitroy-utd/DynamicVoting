@@ -2,16 +2,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class ProcessQueueMessage extends Thread
 
 {
-	//int NodeID;
+	
 	public static CopyOnWriteArrayList<MessageStruct> bufferResponse=new CopyOnWriteArrayList<MessageStruct>();	
-	public static CopyOnWriteArrayList<MessageStruct> bufferRequest=new CopyOnWriteArrayList<MessageStruct>();
-
+	public static Map<String,MessageStruct> bufferRequest=Collections.synchronizedMap(new TreeMap<String,MessageStruct>());
+	
+	
 	public void run() {
 	      while (true)
 	      {
@@ -54,7 +58,7 @@ public class ProcessQueueMessage extends Thread
 	                			
 	                			if (FileProp.list_files.containsKey(processObject.filename))
 	                			{
-	                				bufferRequest.add(processObject);
+	                				bufferRequest.put(processObject.nodeid+"_"+processObject.filename,processObject);
 	                				
 	                			}
 	                			
@@ -78,7 +82,7 @@ public class ProcessQueueMessage extends Thread
 	                			// buffer the request as the file requested is either in read or write mode
 	                			if (FileProp.list_files.containsKey(processObject.filename))
 	                			{
-	                				bufferRequest.add(processObject);
+	                				bufferRequest.put(processObject.nodeid+"_"+processObject.filename,processObject);
 	                			}
 	                		
 	                		}
