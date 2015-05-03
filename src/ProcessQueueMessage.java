@@ -246,7 +246,7 @@ public class ProcessQueueMessage extends Thread
 	                	//fetch the file and send the contents  
 	        			 if(FileProp.list_files.containsKey(processObject.filename))
 	        			 {
-	        				 Path file_path = Paths.get("add the path", processObject.filename);
+	        				 Path file_path = Paths.get("./", processObject.filename);
 	    					 try
 	    					 {
 	    						 byte[] local_content =  Files.readAllBytes(file_path);
