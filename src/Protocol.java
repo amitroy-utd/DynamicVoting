@@ -1,358 +1,382 @@
-import java.io.File;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
-public class Protocol {
-	static Socket socket = null;
-	static int current_reqid=0;
-	static int locktype=9;
-	static String filename="";
-	static int waitingtime=0;
-	public void sendLockRequest(final int lock_type, final String file_name, int reqID,int waiting_time)
-	{
-		final int msgType=0;
-		current_reqid=reqID;	
-		locktype=lock_type;
-		filename=file_name;
-		waitingtime=waiting_time;
-		FileAttributes fb=FileProp.list_files.get(filename);
-		fb.currentReqID=current_reqid;
-		fb.locktype=locktype;
-		if(locktype==0){
-			FileProp.shared_read.put(filename, fb);
-		}
-		else
-		{
-			FileProp.exclusive_write.put(filename,fb);
-		}
-		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
-		{
-			final int NodeID = entry.getKey();
-			final String value = entry.getValue();
-			final String []nodeNetInfo=value.split(":");
-			Thread t = new Thread(new Runnable() {
-					public void run()
-					{
-						try {
-				        								
-							final MessageStruct ms=new MessageStruct(current_reqid,msgType,FileProp.NodeID,locktype,filename);
-			            	//added
-			            	ObjectOutputStream out = null;
-	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
-	             
-	            			out = new ObjectOutputStream(socket.getOutputStream());
-	            			out.writeObject(ms);
-	            			
-	            			
-	            			out.flush();
-	            			out.close();
-			            	
-						} catch (Exception e) {
-							System.out.println("Something falied: " + e.getMessage());
-							e.printStackTrace();
-						}
-					
-					}
-				});
-			t.start(); 
-		}
-		startTimer();
-		checkQuorumMembers();
-		
-	}
-	
-	
-	public void startTimer()
-	{
-		try {
-			Thread.sleep(FileProp.timer);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	public void checkQuorumMembers(){
-			 //ArrayList<MessageStruct> responsearray=new ArrayList<MessageStruct>();	
-			 //responsearray=ProcessQueueMessage.bufferResponse;
-		
-			 FileAttributes fas_obj_listfile=FileProp.list_files.get(filename);			 
-			 fas_obj_listfile.currentReqID=0;
-			 
-			 FileAttributes fas_obj=new FileAttributes(current_reqid, filename, FileProp.NodeID, fas_obj_listfile.verNum, fas_obj_listfile.RU, fas_obj_listfile.M, fas_obj_listfile.P, fas_obj_listfile.Q, locktype, 0, fas_obj_listfile.requestNodeList);
-			 for (MessageStruct ms : ProcessQueueMessage.bufferResponse) 
-			 {
-				 // check lock ms.locktype==locktype
-				 //check FileProp.reqID=ms.reqID
-				 //check filename=ms.filename
-				 if(ms.locktype==locktype && filename.equals(ms.filename) && ms.reqID==current_reqid)
-				 {
-					 fas_obj.P.add(ms.faobj);
-				 }				 					 
-		     }
-			 ProcessQueueMessage.bufferResponse.clear();
-			 fas_obj.M=getMaxVersionNumber(fas_obj);
-			 fas_obj.Q=getQset(fas_obj);
-			 fas_obj.RU=fas_obj.Q.get(0).RU;
-			 int quorun_result=calculateQuorum(fas_obj.RU,fas_obj.Q.size());
-			 if(quorun_result==0){
-				 sendAbort(fas_obj.P);
-				 handleAbort(current_reqid,locktype, filename, waitingtime);	
-				 if(locktype==1){
-					 fas_obj_listfile.locktype=9;
-					 FileProp.exclusive_write.remove(filename);
-				 }
-				 else
-				 {
-					 if(fas_obj_listfile.requestNodeList.isEmpty())
-					 {
-						 fas_obj_listfile.locktype=9;
-						 FileProp.shared_read.remove(filename);
-					 }
-				 }
-				 
-			 }
-			 else if(quorun_result==1 || quorun_result==2)
-			 {
-				 // check for stale copy and send file
-				 byte [] contents=null;
-				 int node_to_send=fas_obj.Q.get(0).nodeid;
-				 String tempfilename="./"+FileProp.NodeID+"/"+filename+"_"+node_to_send+"_temp";
-				 File f=new File(tempfilename);
-				 int staleFlag=0; // it's updated;
-				 if(fas_obj.M>fas_obj_listfile.verNum)
-				 {		
-					 staleFlag=1;
-					 sendFile(node_to_send,filename);
-					 startTimer();			 
-					 
-				 }
-				 try {
-					
-					if(locktype==1)
-					{
-						if(staleFlag==1)
-						{							
-							if(f.exists())
-							 {
-								 File currentfile=new File("./"+FileProp.NodeID+"/"+filename);
-								 //currentfile.delete();
-								 f.renameTo(currentfile);
-							 }
-							else
-							{
-								System.out.println("File not found");
-							}
-						}					
-						contents=do_file_operation(filename, locktype);					
-						send_release_message(fas_obj.P,contents);
-						 fas_obj_listfile.verNum+=1;
-						 fas_obj_listfile.RU=fas_obj.P.size();
-						 fas_obj_listfile.locktype=9;
-						 FileProp.exclusive_write.remove(filename);
-					 }
-					 else
-					 {
-						 contents=do_file_operation(tempfilename, locktype);					
-						 send_release_message(fas_obj.P,contents);
-						 if(fas_obj_listfile.requestNodeList.isEmpty())
-						 {
-							 fas_obj_listfile.locktype=9;
-							 FileProp.shared_read.remove(filename);
-						 }
-					 }
-					
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			 }
-			
-	}
-	
-	public static int getMaxVersionNumber(FileAttributes fas){
-		int max_ver=0;
-		for(FileAttributes f:fas.P)
-		{
-			if(max_ver<f.verNum)
-			{
-				max_ver=f.verNum;
-			}			
-		}
-		return max_ver;
-		
-	}
-	
-	public static ArrayList<FileAttributes> getQset(FileAttributes fas){
-		ArrayList<FileAttributes> al=new ArrayList<FileAttributes>();
-		for(FileAttributes f:fas.P)
-		{
-			if(f.M==fas.M)
-			{
-				al.add(f);
-			}			
-		}
-		return al;
-	}
-	
-	public static int calculateQuorum(int ru,int q_size){
-		int Q_val=0;
-		Q_val=ru/2;
-		if(Q_val>q_size)
-		{
-			return 1;
-		}
-		else if(Q_val==q_size){
-			return 2;
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	
-	public static void sendAbort(ArrayList<FileAttributes> P){
-		for(FileAttributes p_obj:P){
-			String value=FileProp.map.get(p_obj.nodeid);
-			final String []nodeNetInfo=value.split(":");
-			Thread t = new Thread(new Runnable() {
-					public void run()
-					{
-						try {
-				        	final MessageStruct ms=new MessageStruct(current_reqid,2,FileProp.NodeID,locktype,filename);
-			            	//added
-			            	ObjectOutputStream out = null;
-	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
-	             
-	            			out = new ObjectOutputStream(socket.getOutputStream());
-	            			out.writeObject(ms);
-	            			
-	            			
-	            			out.flush();
-	            			out.close();
-			            	
-						} catch (Exception e) {
-							System.out.println("Something falied: " + e.getMessage());
-							e.printStackTrace();
-						}
-					
-					}
-				});
-			t.start();
-		}
-	}
-	
-	public void handleAbort(int reqID, int locktype, String filename, int waiting_time)
-	{
-		//This function is called if the required Quorum is not got.
-		// This function retries the same message after waiting for min_wait time
-		// and tries doing so until the max wait time is reached
-		
-		//sleep for the minimum wait time
-		if (waiting_time >= FileProp.max_wait)
-		{
-			//stop the retry and exit from the function
-		}
-		else
-		{
-			try
-			{
-				
-				//retry the same message after wait time (exponential back off)
-				Thread.sleep(waiting_time);
-		
-				sendLockRequest(locktype, filename,reqID,2*waiting_time);
-		
-			}
-			catch(Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	public byte [] do_file_operation(String filename, int locktype) throws Exception
-	{		
-		//read the file or write into the file
-		
-		FileReadingWriting.FileOperation(Project3.CurrentNodeId, filename, locktype,"log.txt");
-		Path file_path = Paths.get("./"+FileProp.NodeID+"/", filename);
-		byte[] local_content=null;
-        try
-        {
-             local_content =  Files.readAllBytes(file_path);
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-		//send release message 
-		//send_release_message();
-		//file_action_leave();
-		return local_content;
-	}
-	
-	public void send_release_message(ArrayList<FileAttributes> P,final byte [] content){
-		for(FileAttributes p_obj:P){
-			String value=FileProp.map.get(p_obj.nodeid);
-			final FileAttributes fab=FileProp.list_files.get(filename);
-			final String []nodeNetInfo=value.split(":");
-			Thread t = new Thread(new Runnable() {
-					public void run()
-					{
-						try {
-							
-				        	final MessageStruct ms=new MessageStruct(current_reqid,3,FileProp.NodeID,locktype,filename,fab,content);
-			            	//added
-			            	ObjectOutputStream out = null;
-	            			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
-	             
-	            			out = new ObjectOutputStream(socket.getOutputStream());
-	            			out.writeObject(ms);
-	            			
-	            			
-	            			out.flush();
-	            			out.close();
-			            	
-						} catch (Exception e) {
-							System.out.println("Something falied: " + e.getMessage());
-							e.printStackTrace();
-						}
-					
-					}
-				});
-			t.start();
-		}
-	}
-	
-	public static void sendFile(int node_to_send, String filename){
-		String value=FileProp.map.get(node_to_send);
-		final String []nodeNetInfo=value.split(":");
-		try {
-			
-        	final MessageStruct ms=new MessageStruct(current_reqid,4,FileProp.NodeID,filename);
-        	//added
-        	ObjectOutputStream out = null;
-			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
- 
-			out = new ObjectOutputStream(socket.getOutputStream());
-			out.writeObject(ms);
-			
-			
-			out.flush();
-			out.close();
-        	
-		} catch (Exception e) {
-			System.out.println("Something falied: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
+public class ProcessQueueMessage extends Thread
 
+{
+	
+	public static CopyOnWriteArrayList<MessageStruct> bufferResponse=new CopyOnWriteArrayList<MessageStruct>();	
+	public static ArrayList<MessageStruct> bufferRequest=new ArrayList<MessageStruct>();
+	
+	public void run() {
+	      while (true)
+	      {
+	    	  if (!(Server.unbounded.isEmpty()))
+	    	  {
+	    		  try {
+	    			  execute(Server.unbounded.take());
+	    		  	  }
+	    		  catch (InterruptedException e) {
+	    	   }
+	    	  }
+	      }  
+	   }
+	
+	
+	private void execute(final MessageStruct processObject) {
+	      new Thread(new Runnable() {
+	         public void run() {
+	            //request.execute();
+	        	 try
+	        	 {
+	        		 if (processObject.msgType == 0) // the received message is a read request or write request 
+	        		 {
+	                	if(processObject.locktype == 0)// READ REQUEST 
+	                	{
+	                		if (FileProp.shared_read.containsKey(processObject.filename))
+	                		{
+	                			// file is in shared mode, can send the lock back to the requesting node
+	                			
+	                			if (FileProp.list_files.containsKey(processObject.filename))
+	                			{
+	                				lockAndSendResponseRead(processObject);
+	                			}
+	                			
+	                			
+	                		}
+	                		else if (FileProp.exclusive_write.containsKey(processObject.filename))
+	                		{
+	                			//file is in write mode so buffer the request
+	                			
+	                			if (FileProp.list_files.containsKey(processObject.filename))
+	                			{
+	                				bufferRequest.add(processObject);
+	                				
+	                			}
+	                			
+	                		}
+	                		else
+	                		{
+	                			//the file requested is free (that means lock type is 9),so lock and send the lock to requested node
+	                			
+	                			//Get the file requested for read from the list_files map 
+	                			if (FileProp.list_files.containsKey(processObject.filename))
+	                			{
+	                				lockAndSendResponseRead(processObject);
+	                			}
+	                			
+	                		}
+	                	}
+	                	else // its a write lock
+	                	{
+	                		if ((FileProp.shared_read.containsKey(processObject.filename)) || (FileProp.exclusive_write.containsKey(processObject.filename)))
+	                		{
+	                			// buffer the request as the file requested is either in read or write mode
+	                			if (FileProp.list_files.containsKey(processObject.filename))
+	                			{
+	                				bufferRequest.add(processObject);
+	                			}
+	                		
+	                		}
+	                		else 
+	                		{
+	                			//file is free so lock the local copy in write mode and send the lock
+	                			
+	                			//Get the file requested for read from the list_files map 
+	                			if (FileProp.list_files.containsKey(processObject.filename))
+	                			{
+	                				lockAndSendResponseWrite(processObject);
+	                			}
+	                			
+	                		
+	                		}
+	                	}
+	                	
+	                	
+	        		 }
+	        		 else if (processObject.msgType == 1) // message received is a response to the read or write request
+	        		 {
+	                	
+	        			if((processObject.locktype == 0)|| (processObject.locktype == 1))// response received for read lock
+		                {
+	        				//add it to the response queue
+	        				if (FileProp.list_files.containsKey(processObject.filename))
+                			{
+	        					
+	        					FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
+	        					// if the reply is received for the current request buffer
+	        					if (current_node_file_object1.currentReqID==processObject.reqID)
+	        					{
+	        						bufferResponse.add(processObject);
+	        					}
+	        					//if the reply received is for a old request then send abort back
+	        					else
+	        					{
+	        						//Sendabort(processObject);
+	        						
+	        						//check with Amit about sending the abort
+	        						String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
+	        						
+	        						
+	        						//                   MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
+	        						MessageStruct ms=new MessageStruct(processObject.reqID,2,Project3.CurrentNodeId,processObject.locktype,processObject.filename);
+	        				    	try
+	        				    	{
+	        				    		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
+	        				    	}
+	        				    	catch (Exception e)
+	        				    	{
+	        				    		e.printStackTrace();
+	        				    	}
+	        						
+	        						
+	        					}
+                			}
+	        				
+		                }
+	        			/*else if (processObject.locktype == 1)// response received for write lock
+		                {
+	        				//add it to the response queue
+		                }
+	                	*/
+	        		 }
+	        		 else if (processObject.msgType == 2) // message received is abort
+	        		 {
+
+	        			 //when receiving a abort for the request , remove the lock secured for it
+	        			 
+	        			 if (FileProp.list_files.containsKey(processObject.filename))
+             			{
+	        				 //if the abort message is received for a request present in request queue,it means it was not processed still
+	        				 
+	        				 	if (bufferRequest.contains(processObject))
+	        				 	{
+	        				 		bufferRequest.remove(processObject);
+	        				 	}
+	        				 	//if the abort message is not in the request then it means it was processed, hence has to be removed from the file attributes
+	        				 	
+	        				 	else
+	        				 	{
+	        					
+	        				 		FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
+	        				 		current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
+	        				 		
+	        				 		if (current_node_file_object1.requestNodeList.isEmpty())
+	        				 		{
+	        				 			current_node_file_object1.locktype=9;
+	        				 			
+	        				 			//lock is free hence release from shared mode list or exclusive mode list
+	        				 			if(FileProp.shared_read.containsKey(processObject.filename))
+	        				 			{
+	        				 				FileProp.shared_read.remove(processObject.filename);
+	        				 			}	
+	        				 			else if(FileProp.exclusive_write.containsKey(processObject.filename))
+	        				 			{
+	        				 				FileProp.exclusive_write.remove(processObject.filename);
+	        				 			}
+	        						
+	        				 		}
+	        				 		//FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        				 	}
+	        			 
+             			}
+	                	
+	        		 }
+	        		 else if (processObject.msgType == 3) // message received is release
+	        		 {
+	        			 
+	        			 
+	        			
+	        			 if (FileProp.list_files.containsKey(processObject.filename))
+	             		 {
+	        				 //when a release message is received, for read lock, just the lock type needs to be released
+	        				 if (processObject.locktype == 0)
+	        				 {
+	        					 FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
+	        					 current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
+	        					 if (current_node_file_object1.requestNodeList.isEmpty())
+	        					 {
+	        						 current_node_file_object1.locktype=9;
+	        						
+	        						 //lock is free hence release from shared mode list or exclusive mode list
+	        						 if(FileProp.shared_read.containsKey(processObject.filename))
+	        						 {
+	        							 FileProp.shared_read.remove(processObject.filename);
+	        						 }
+	        						 
+	        						 
+	        					 }
+	        					 //FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        				 }
+	        				 else if(processObject.locktype==1)
+	        				 {
+	        					 //
+	    	        			 
+	    	        			 //when a release message is received for a write lock, updation of the file attributes like version number ,no of copies updated and updation of the file needs to be done
+	        					 FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
+	        					 current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
+	        					 current_node_file_object1.verNum = processObject.faobj.verNum;
+	        					 //number of copies updated
+	        					 current_node_file_object1.RU = processObject.faobj.RU;
+	        					 
+	        					 if (current_node_file_object1.requestNodeList.isEmpty())
+	        					 {
+	        						 current_node_file_object1.locktype=9;
+	        						
+	        						if(FileProp.exclusive_write.containsKey(processObject.filename))
+	        						 {
+	        							 FileProp.exclusive_write.remove(processObject.filename);
+	        						 }
+	        						 
+	        					 }
+	        					 //FileProp.list_files.put(processObject.filename, current_node_file_object1);
+	        					 
+	        					 // replace the file with file received
+	        					 
+	        /*change path*/		 Path file_path = Paths.get("./", processObject.filename);
+	        					 try
+	        					 {
+	        						 Files.write(file_path, processObject.contents);
+	        					 }
+	        					 catch (Exception e)
+	        					 {
+	        						 e.printStackTrace();
+	        					 }
+	        				 }
+	        			 
+	                	
+	             		 }
+	        		 }
+	        		 else if (processObject.msgType == 4) // message received is send the file
+	        		 {
+	                	//fetch the file and send the contents  
+	        			 if(FileProp.list_files.containsKey(processObject.filename))
+	        			 {
+	        				 Path file_path = Paths.get("./", processObject.filename);
+	    					 try
+	    					 {
+	    						 byte[] local_content =  Files.readAllBytes(file_path);
+	    						 String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
+	    							
+	    							
+	    						//MessageStruct( int reqID, int msgType, int nodeid, String Filename, byte[] contents)
+	    							
+	    						MessageStruct ms=new MessageStruct(processObject.reqID,5,Project3.CurrentNodeId,processObject.filename,local_content);
+	    					    try
+	    					    {
+	    					    	new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
+	    					    }
+	    					    catch (Exception e)
+	    					    {
+	    					    	e.printStackTrace();
+	    					    }
+	    						 
+	    					 }
+	    					 catch (Exception e)
+	    					 {
+	    						 e.printStackTrace();
+	    					 }
+	        			 }
+	        			 
+	                	
+	        		 }
+	        		 else if (processObject.msgType == 5) // Received the file
+	        		 {
+	                	
+	        			 if(FileProp.list_files.containsKey(processObject.filename))
+	        			 {
+/*change path*/				 Path file_path = Paths.get("./", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
+	    					 try
+	    					 {
+	    						Files.write(file_path, processObject.contents);
+	    						 
+	    					 }
+	    					 catch (Exception e)
+	    					 {
+	    						 e.printStackTrace();
+	    					 }
+	        			 }
+	        			 
+	                	
+	        		 }
+	        		 else
+	        		 {
+	        			 System.out.println("connection check");
+	                	
+	        		 }	
+	        	 }
+	        	 catch (Exception e)
+	        	 {
+	        		 e.printStackTrace();
+	        	 }
+	         }
+	      }).start();
+	   }
+	
+	
+	public void lockAndSendResponseRead(MessageStruct processObject) throws NumberFormatException, IOException
+	{
+		FileAttributes current_node_file_object = FileProp.list_files.get(processObject.filename);
+		
+		// update the object with request id of node and lock
+		//current_node_file_object.locktype = 0;// it is already locked in read mode
+		current_node_file_object.requestNodeList.add(processObject.reqID+"-"+processObject.nodeid);
+		
+		//update the list file list with updated attributes
+		//FileProp.list_files.put(processObject.filename, current_node_file_object);
+		FileProp.shared_read.put(processObject.filename, current_node_file_object);
+		//get the host id and port number
+		String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
+		
+						
+		//MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
+		
+		MessageStruct ms=new MessageStruct(processObject.reqID,1,Project3.CurrentNodeId,0,processObject.filename,current_node_file_object,current_node_file_object.verNum);
+    	try
+    	{
+    		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
+    	}
+    	catch (Exception e)
+    	{
+    		e.printStackTrace();
+    	}
+	}
+	
+	
+	
+	public void lockAndSendResponseWrite(MessageStruct processObject) throws NumberFormatException, IOException
+	{
+		FileAttributes current_node_file_object = FileProp.list_files.get(processObject.filename);
+		
+		// update the object with request id of node and lock
+		//current_node_file_object.locktype = 0;
+		current_node_file_object.requestNodeList.add(processObject.reqID+"-"+processObject.nodeid);
+		
+		//update the list file list with updated attributes
+		//FileProp.list_files.put(processObject.filename, current_node_file_object);
+		FileProp.exclusive_write.put(processObject.filename, current_node_file_object);
+		//get the host id and port number
+		String []nodeNetInfo=FileProp.map.get(processObject.nodeid).split(":");
+		
+						
+		//MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
+		
+		MessageStruct ms=new MessageStruct(processObject.reqID,1,Project3.CurrentNodeId,1,processObject.filename,current_node_file_object,current_node_file_object.verNum);
+    	try
+    	{
+    		new Client().startClient(nodeNetInfo[0],Integer.parseInt(nodeNetInfo[1]),ms);
+    	}
+    	catch (Exception e)
+    	{
+    		e.printStackTrace();
+    	}
+	}
 }
