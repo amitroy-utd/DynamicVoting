@@ -322,7 +322,7 @@ public class ProcessQueueMessage extends Thread
 	   }
 	
 	
-	public void lockAndSendResponseRead(MessageStruct processObject) throws NumberFormatException, IOException
+	public static void lockAndSendResponseRead(MessageStruct processObject) throws NumberFormatException, IOException
 	{
 		FileAttributes current_node_file_object = FileProp.list_files.get(processObject.filename);
 		
@@ -352,7 +352,7 @@ public class ProcessQueueMessage extends Thread
 	
 	
 	
-	public void lockAndSendResponseWrite(MessageStruct processObject) throws NumberFormatException, IOException
+	public static void lockAndSendResponseWrite(MessageStruct processObject) throws NumberFormatException, IOException
 	{
 		FileAttributes current_node_file_object = FileProp.list_files.get(processObject.filename);
 		

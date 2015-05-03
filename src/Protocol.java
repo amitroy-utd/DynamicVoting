@@ -122,7 +122,22 @@ public class Protocol {
 						 FileProp.shared_read.remove(filename);
 					 }
 				 }
-				 handleAbort(current_reqid,locktype, filename, waitingtime);				 
+					Thread t = new Thread(new Runnable() {
+						public void run()
+						{
+							try {
+					        								
+								 HandleRequest.handle_other();	
+				            	
+							} catch (Exception e) {
+								System.out.println("Something falied: " + e.getMessage());
+								e.printStackTrace();
+							}
+						
+						}
+					});
+					t.start();
+				    handleAbort(current_reqid,locktype, filename, waitingtime);				 
 			 }
 			 else if(quorun_result==1 || quorun_result==2)
 			 {
@@ -173,6 +188,21 @@ public class Protocol {
 							 FileProp.shared_read.remove(filename);
 						 }
 					 }
+					Thread t = new Thread(new Runnable() {
+						public void run()
+						{
+							try {
+					        								
+								 HandleRequest.handle_other();	
+				            	
+							} catch (Exception e) {
+								System.out.println("Something falied: " + e.getMessage());
+								e.printStackTrace();
+							}
+						
+						}
+					});
+					t.start();
 					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
