@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
@@ -13,8 +14,7 @@ public class ProcessQueueMessage extends Thread
 {
 	
 	public static CopyOnWriteArrayList<MessageStruct> bufferResponse=new CopyOnWriteArrayList<MessageStruct>();	
-	public static Map<String,MessageStruct> bufferRequest=Collections.synchronizedMap(new TreeMap<String,MessageStruct>());
-	
+	public static ArrayList<MessageStruct> bufferRequest=new ArrayList<MessageStruct>();
 	
 	public void run() {
 	      while (true)
@@ -58,7 +58,7 @@ public class ProcessQueueMessage extends Thread
 	                			
 	                			if (FileProp.list_files.containsKey(processObject.filename))
 	                			{
-	                				bufferRequest.put(processObject.nodeid+"_"+processObject.filename,processObject);
+	                				bufferRequest.add(processObject);
 	                				
 	                			}
 	                			
@@ -82,7 +82,7 @@ public class ProcessQueueMessage extends Thread
 	                			// buffer the request as the file requested is either in read or write mode
 	                			if (FileProp.list_files.containsKey(processObject.filename))
 	                			{
-	                				bufferRequest.put(processObject.nodeid+"_"+processObject.filename,processObject);
+	                				bufferRequest.add(processObject);
 	                			}
 	                		
 	                		}
@@ -157,9 +157,9 @@ public class ProcessQueueMessage extends Thread
              			{
 	        				 //if the abort message is received for a request present in request queue,it means it was not processed still
 	        				 
-	        				 	if (bufferRequest.containsKey(processObject.nodeid+"_"+processObject.filename))
+	        				 	if (bufferRequest.contains(processObject))
 	        				 	{
-	        				 		bufferRequest.remove(processObject.nodeid+"_"+processObject.filename);
+	        				 		bufferRequest.remove(processObject);
 	        				 	}
 	        				 	//if the abort message is not in the request then it means it was processed, hence has to be removed from the file attributes
 	        				 	
