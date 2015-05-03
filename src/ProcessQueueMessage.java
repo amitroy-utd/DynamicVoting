@@ -167,23 +167,70 @@ public class ProcessQueueMessage extends Thread
 	        				 	{
 	        					
 	        				 		FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
-	        				 		current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
+	        				 		if (current_node_file_object1.locktype==0)
+	        				 		{
+	        				 			current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
 	        				 		
-	        				 		if (current_node_file_object1.requestNodeList.isEmpty())
+	        				 			if (current_node_file_object1.requestNodeList.isEmpty())
+	        				 			{
+	        				 				current_node_file_object1.locktype=9;
+	        				 			
+	        				 				//lock is free hence release from shared mode list or exclusive mode list
+	        				 				if(FileProp.shared_read.containsKey(processObject.filename))
+	        				 				{
+	        				 					FileProp.shared_read.remove(processObject.filename);
+	        				 				}
+	        				 				
+	        				 				//call request handle other
+	        				 				
+	        				 				Thread t = new Thread(new Runnable() {
+	        									public void run()
+	        									{
+	        										try {
+	        								        								
+	        											 HandleRequest.handle_other();	
+	        							            	
+	        										} catch (Exception e) {
+	        											System.out.println("Something falied: " + e.getMessage());
+	        											e.printStackTrace();
+	        										}
+	        									
+	        									}
+	        								});
+	        								t.start();
+	        				 				
+	        				 				
+	        				 			}
+	        				 		}
+	        				 		else if(current_node_file_object1.locktype==1)
 	        				 		{
 	        				 			current_node_file_object1.locktype=9;
-	        				 			
-	        				 			//lock is free hence release from shared mode list or exclusive mode list
-	        				 			if(FileProp.shared_read.containsKey(processObject.filename))
-	        				 			{
-	        				 				FileProp.shared_read.remove(processObject.filename);
-	        				 			}	
-	        				 			else if(FileProp.exclusive_write.containsKey(processObject.filename))
+	        				 			if(FileProp.exclusive_write.containsKey(processObject.filename))
 	        				 			{
 	        				 				FileProp.exclusive_write.remove(processObject.filename);
 	        				 			}
+	        				 			
+	        				 			// call request handle other because my lock is free
+	        				 			
+	        				 			Thread t = new Thread(new Runnable() {
+	        								public void run()
+	        								{
+	        									try {
+	        							        								
+	        										 HandleRequest.handle_other();	
+	        						            	
+	        									} catch (Exception e) {
+	        										System.out.println("Something falied: " + e.getMessage());
+	        										e.printStackTrace();
+	        									}
+	        								
+	        								}
+	        							});
+	        							t.start();
 	        						
 	        				 		}
+	        				 		
+	        				 		
 	        				 		//FileProp.list_files.put(processObject.filename, current_node_file_object1);
 	        				 	}
 	        			 
@@ -212,6 +259,24 @@ public class ProcessQueueMessage extends Thread
 	        							 FileProp.shared_read.remove(processObject.filename);
 	        						 }
 	        						 
+	        						 // call request handle other 
+	        						 
+	        						 Thread t = new Thread(new Runnable() {
+	        								public void run()
+	        								{
+	        									try {
+	        							        								
+	        										 HandleRequest.handle_other();	
+	        						            	
+	        									} catch (Exception e) {
+	        										System.out.println("Something falied: " + e.getMessage());
+	        										e.printStackTrace();
+	        									}
+	        								
+	        								}
+	        							});
+	        							t.start();
+	        						 
 	        						 
 	        					 }
 	        					 //FileProp.list_files.put(processObject.filename, current_node_file_object1);
@@ -222,26 +287,26 @@ public class ProcessQueueMessage extends Thread
 	    	        			 
 	    	        			 //when a release message is received for a write lock, updation of the file attributes like version number ,no of copies updated and updation of the file needs to be done
 	        					 FileAttributes current_node_file_object1 = FileProp.list_files.get(processObject.filename);
-	        					 current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
+	        					 //current_node_file_object1.requestNodeList.remove(processObject.reqID+"-"+processObject.nodeid);
 	        					 current_node_file_object1.verNum = processObject.faobj.verNum;
 	        					 //number of copies updated
 	        					 current_node_file_object1.RU = processObject.faobj.RU;
 	        					 
-	        					 if (current_node_file_object1.requestNodeList.isEmpty())
-	        					 {
-	        						 current_node_file_object1.locktype=9;
+	        					 //if (current_node_file_object1.requestNodeList.isEmpty())
+	        					 //{
+	        					 current_node_file_object1.locktype=9;
 	        						
-	        						if(FileProp.exclusive_write.containsKey(processObject.filename))
-	        						 {
-	        							 FileProp.exclusive_write.remove(processObject.filename);
-	        						 }
-	        						 
+	        					if(FileProp.exclusive_write.containsKey(processObject.filename))
+	        					 {
+	        						 FileProp.exclusive_write.remove(processObject.filename);
 	        					 }
+	        						 
+	        					// }
 	        					 //FileProp.list_files.put(processObject.filename, current_node_file_object1);
 	        					 
 	        					 // replace the file with file received
 	        					 
-	        /*change path*/		 Path file_path = Paths.get("./", processObject.filename);
+	        /*change path*/		 Path file_path = Paths.get("./"+FileProp.NodeID+"/", processObject.filename);
 	        					 try
 	        					 {
 	        						 Files.write(file_path, processObject.contents);
@@ -250,6 +315,24 @@ public class ProcessQueueMessage extends Thread
 	        					 {
 	        						 e.printStackTrace();
 	        					 }
+	        					 
+	        					 //call request handle other
+	        					 
+	        					 Thread t = new Thread(new Runnable() {
+	        							public void run()
+	        							{
+	        								try {
+	        						        								
+	        									 HandleRequest.handle_other();	
+	        					            	
+	        								} catch (Exception e) {
+	        									System.out.println("Something falied: " + e.getMessage());
+	        									e.printStackTrace();
+	        								}
+	        							
+	        							}
+	        						});
+	        						t.start();
 	        				 }
 	        			 
 	                	
@@ -260,7 +343,7 @@ public class ProcessQueueMessage extends Thread
 	                	//fetch the file and send the contents  
 	        			 if(FileProp.list_files.containsKey(processObject.filename))
 	        			 {
-	        				 Path file_path = Paths.get("./", processObject.filename);
+	        				 Path file_path = Paths.get("./"+FileProp.NodeID+"/", processObject.filename);
 	    					 try
 	    					 {
 	    						 byte[] local_content =  Files.readAllBytes(file_path);
@@ -293,7 +376,7 @@ public class ProcessQueueMessage extends Thread
 	                	
 	        			 if(FileProp.list_files.containsKey(processObject.filename))
 	        			 {
-/*change path*/				 Path file_path = Paths.get("./", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
+/*change path*/				 Path file_path = Paths.get("./"+FileProp.NodeID+"/", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
 	    					 try
 	    					 {
 	    						Files.write(file_path, processObject.contents);
@@ -358,7 +441,7 @@ public class ProcessQueueMessage extends Thread
 		
 		// update the object with request id of node and lock
 		//current_node_file_object.locktype = 0;
-		current_node_file_object.requestNodeList.add(processObject.reqID+"-"+processObject.nodeid);
+		//current_node_file_object.requestNodeList.add(processObject.reqID+"-"+processObject.nodeid);
 		
 		//update the list file list with updated attributes
 		//FileProp.list_files.put(processObject.filename, current_node_file_object);
