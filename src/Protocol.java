@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -21,6 +22,16 @@ public class Protocol {
 		locktype=lock_type;
 		filename=file_name;
 		waitingtime=waiting_time;
+		FileAttributes fb=FileProp.list_files.get(filename);
+		fb.currentReqID=current_reqid;
+		fb.locktype=locktype;
+		if(locktype==0){
+			FileProp.shared_read.put(filename, fb);
+		}
+		else
+		{
+			FileProp.exclusive_write.put(filename,fb);
+		}
 		for (Map.Entry<Integer, String> entry : FileProp.map.entrySet())
 		{
 			final int NodeID = entry.getKey();
@@ -30,8 +41,7 @@ public class Protocol {
 					public void run()
 					{
 						try {
-				        	FileAttributes fb=FileProp.list_files.get(filename);
-							fb.currentReqID=current_reqid;
+				        								
 							final MessageStruct ms=new MessageStruct(current_reqid,msgType,FileProp.NodeID,locktype,filename);
 			            	//added
 			            	ObjectOutputStream out = null;
@@ -73,8 +83,10 @@ public class Protocol {
 			 //ArrayList<MessageStruct> responsearray=new ArrayList<MessageStruct>();	
 			 //responsearray=ProcessQueueMessage.bufferResponse;
 		
-			 FileAttributes fas_obj=FileProp.list_files.get(filename);			 
-			 fas_obj.currentReqID=0;
+			 FileAttributes fas_obj_listfile=FileProp.list_files.get(filename);			 
+			 fas_obj_listfile.currentReqID=0;
+			 
+			 FileAttributes fas_obj=new FileAttributes(current_reqid, filename, FileProp.NodeID, fas_obj_listfile.verNum, fas_obj_listfile.RU, fas_obj_listfile.M, fas_obj_listfile.P, fas_obj_listfile.Q, locktype, 0, fas_obj_listfile.requestNodeList);
 			 for (MessageStruct ms : ProcessQueueMessage.bufferResponse) 
 			 {
 				 // check lock ms.locktype==locktype
@@ -92,15 +104,71 @@ public class Protocol {
 			 int quorun_result=calculateQuorum(fas_obj.RU,fas_obj.Q.size());
 			 if(quorun_result==0){
 				 sendAbort(fas_obj.P);
-				 handleAbort(current_reqid,locktype, filename, waitingtime);				 
+				 handleAbort(current_reqid,locktype, filename, waitingtime);	
+				 if(locktype==1){
+					 fas_obj_listfile.locktype=9;
+					 FileProp.exclusive_write.remove(filename);
+				 }
+				 else
+				 {
+					 if(fas_obj_listfile.requestNodeList.isEmpty())
+					 {
+						 fas_obj_listfile.locktype=9;
+						 FileProp.shared_read.remove(filename);
+					 }
+				 }
+				 
 			 }
 			 else if(quorun_result==1 || quorun_result==2)
 			 {
 				 // check for stale copy and send file
 				 byte [] contents=null;
+				 int node_to_send=fas_obj.Q.get(0).nodeid;
+				 String tempfilename="./"+FileProp.NodeID+"/"+filename+"_"+node_to_send+"_temp";
+				 File f=new File(tempfilename);
+				 int staleFlag=0; // it's updated;
+				 if(fas_obj.M>fas_obj_listfile.verNum)
+				 {		
+					 staleFlag=1;
+					 sendFile(node_to_send,filename);
+					 startTimer();			 
+					 
+				 }
 				 try {
-					contents=do_file_operation(filename, locktype);
-					send_release_message(fas_obj.P,contents);
+					
+					if(locktype==1)
+					{
+						if(staleFlag==1)
+						{							
+							if(f.exists())
+							 {
+								 File currentfile=new File("./"+FileProp.NodeID+"/"+filename);
+								 //currentfile.delete();
+								 f.renameTo(currentfile);
+							 }
+							else
+							{
+								System.out.println("File not found");
+							}
+						}					
+						contents=do_file_operation(filename, locktype);					
+						send_release_message(fas_obj.P,contents);
+						 fas_obj_listfile.verNum+=1;
+						 fas_obj_listfile.RU=fas_obj.P.size();
+						 fas_obj_listfile.locktype=9;
+						 FileProp.exclusive_write.remove(filename);
+					 }
+					 else
+					 {
+						 contents=do_file_operation(tempfilename, locktype);					
+						 send_release_message(fas_obj.P,contents);
+						 if(fas_obj_listfile.requestNodeList.isEmpty())
+						 {
+							 fas_obj_listfile.locktype=9;
+							 FileProp.shared_read.remove(filename);
+						 }
+					 }
+					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -261,6 +329,29 @@ public class Protocol {
 					}
 				});
 			t.start();
+		}
+	}
+	
+	public static void sendFile(int node_to_send, String filename){
+		String value=FileProp.map.get(node_to_send);
+		final String []nodeNetInfo=value.split(":");
+		try {
+			
+        	final MessageStruct ms=new MessageStruct(current_reqid,4,FileProp.NodeID,filename);
+        	//added
+        	ObjectOutputStream out = null;
+			socket = new Socket(nodeNetInfo[0], Integer.parseInt(nodeNetInfo[1]));
+ 
+			out = new ObjectOutputStream(socket.getOutputStream());
+			out.writeObject(ms);
+			
+			
+			out.flush();
+			out.close();
+        	
+		} catch (Exception e) {
+			System.out.println("Something falied: " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
