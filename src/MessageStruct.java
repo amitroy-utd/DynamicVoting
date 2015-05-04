@@ -4,9 +4,9 @@ class MessageStruct implements Serializable
     /**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
-	int reqID;  
-	int msgType; //0 - req 1-response 2-abort 3-release 4-sendfile 5-recvfile
+    private static final long serialVersionUID = 1L;
+    int reqID;  
+    int msgType; //0 - req 1-response 2-abort 3-release 4-sendfile 5-recvfile
     int nodeid ; // current node id
     int locktype; // 0 - read 1 - write 9-free
     String filename;
@@ -14,6 +14,13 @@ class MessageStruct implements Serializable
     int RU;
     FileAttributes faobj;
     byte[] contents;
+    
+    // for connection check
+    public  MessageStruct(int msgType, int nodeid)
+    {
+       this.msgType=msgType;
+       this.nodeid=nodeid;
+    }
     
     // for response
     public  MessageStruct( int reqID, int msgType, int nodeid, int locktype,String Filename, FileAttributes faobj, int verNum)
