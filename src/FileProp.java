@@ -68,7 +68,7 @@ public class FileProp implements Serializable{
 		
 		//Populate for common Map		
 				//If this pathname does not denote a directory, then listFiles() returns null. 
-				File[] files = new File("D:\\Studies\\Python").listFiles();
+				File[] files = new File("./"+NodeID+"/").listFiles();
 				
 					for (File file : files) {
 				    if (file.isFile()) {

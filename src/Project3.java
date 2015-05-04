@@ -1,5 +1,9 @@
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Project3 implements Serializable {
 	
@@ -46,7 +50,9 @@ public class Project3 implements Serializable {
 				
 				
 			check_all_servers();
-        
+			Application ap=new Application();
+			ap.sendRequest();
+			System.out.println("Completed!!!");
         
 		
 	}// end of main
@@ -72,7 +78,7 @@ public class Project3 implements Serializable {
 			if (treemap.isEmpty())
 			{
 				//call the logic because all the servers are up and running 
-				System.out.println("all servers up continuing. for..."+ Project2.CurrentNodeId);
+				System.out.println("all servers up continuing. for..."+ CurrentNodeId);
 				//break out of the loop
 				break;
 			}
@@ -94,8 +100,8 @@ public class Project3 implements Serializable {
 						ObjectOutputStream out = null;
 						out = new ObjectOutputStream(socket1.getOutputStream());
 						out.writeObject(ms);
-			           		out.flush();
-			           		out.close();
+		           		out.flush();
+		           		out.close();
 						if (socket1.isConnected())
 						{
 							remove_entry = true;
@@ -119,4 +125,5 @@ public class Project3 implements Serializable {
 		    }
 			
 		}
+	}
 } //end of class
