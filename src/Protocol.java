@@ -17,8 +17,24 @@ public class Protocol {
 	static int waitingtime=0;
 	public void sendLockRequest(final int lock_type, final String file_name, int reqID,int waiting_time)
 	{
+		/*
+		//DEBUG
+		System.out.println("In Protocol lock type:"+lock_type+": filename is:"+file_name);
+		
+
+		for (Map.Entry<String, FileAttributes> entry : FileProp.list_files.entrySet())
+			{
+				String key = entry.getKey();
+				//String value = entry.getValue();
+				System.out.println("key is: "+key);
+			}
+		//DEBUG
+		*/
+
+
 		while(true){
 		FileAttributes fb=FileProp.list_files.get(file_name);
+		
 		if(fb.locktype!=1)
 		{		
 			final int msgType=0;
@@ -93,6 +109,7 @@ public class Protocol {
 			 fas_obj_listfile.currentReqID=0;
 			 
 			 FileAttributes fas_obj=new FileAttributes(current_reqid, filename, FileProp.NodeID, fas_obj_listfile.verNum, fas_obj_listfile.RU, fas_obj_listfile.M, fas_obj_listfile.P, fas_obj_listfile.Q, locktype, 0, fas_obj_listfile.requestNodeList);
+			 System.out.println("buffer response size is+"+ProcessQueueMessage.bufferResponse.size());
 			 for (MessageStruct ms : ProcessQueueMessage.bufferResponse) 
 			 {
 				 // check lock ms.locktype==locktype
