@@ -17,7 +17,32 @@ public class Project3 implements Serializable {
 		// get details from file
 		topology=args[1];
 		CurrentNodeId = Integer.parseInt(args[0]);
-		 
+		FileProp fp =new FileProp();
+		fp.readNodeDetails(CurrentNodeId, topology);
+		fp.readFileInformation();
+		server_port=Integer.parseInt(FileProp.map.get(CurrentNodeId).split(":")[1]);
+		Runnable serverTask = new Runnable() { 
+			 public void run() { 
+				try {
+					new Server(server_port);
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+				} 
+			}; 
+			Thread serverThread = new Thread(serverTask); 
+			serverThread.start();
+			
+			Runnable processTask = new Runnable() { 
+				 public void run() { 
+					new ProcessQueueMessage(); 
+					} 
+				}; 
+				Thread processTaskThread = new Thread(processTask); 
+				processTaskThread.start();
+				
+				
         
         
 		

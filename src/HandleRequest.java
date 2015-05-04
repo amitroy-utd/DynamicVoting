@@ -23,8 +23,9 @@ public class HandleRequest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					ProcessQueueMessage.bufferRequest.remove(0);
 				}
-				else if(ms.locktype==1)
+				else if(ms.locktype==1 && fs.locktype!=0)
 				{
 					try {
 						ProcessQueueMessage.lockAndSendResponseWrite(ms);
@@ -35,8 +36,9 @@ public class HandleRequest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					ProcessQueueMessage.bufferRequest.remove(0);
 				}
-				ProcessQueueMessage.bufferRequest.remove(0);
+				
 			}
 			else
 			{
