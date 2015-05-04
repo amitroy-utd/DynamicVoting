@@ -42,7 +42,7 @@ public class Project3 implements Serializable {
 			
 			Runnable processTask = new Runnable() { 
 				 public void run() { 
-					new ProcessQueueMessage(); 
+					new ProcessQueueMessage().start(); 
 					} 
 				}; 
 				Thread processTaskThread = new Thread(processTask); 
