@@ -14,10 +14,12 @@ public class ProcessQueueMessage extends Thread
 	public static ArrayList<MessageStruct> bufferRequest=new ArrayList<MessageStruct>();
 	
 	public void run() {
+		System.out.println("Inside process message queue");
 	      while (true)
 	      {
 	    	  if (!(Server.unbounded.isEmpty()))
 	    	  {
+			System.out.println("There is something in the queue");
 	    		  try {
 	    			  execute(Server.unbounded.take());
 	    		  	  }
@@ -31,6 +33,7 @@ public class ProcessQueueMessage extends Thread
 	private void execute(final MessageStruct processObject) {
 	      new Thread(new Runnable() {
 	         public void run() {
+			System.out.println("inside queue");
 	            //request.execute();
 	        	 try
 	        	 {
