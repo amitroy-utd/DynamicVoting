@@ -23,9 +23,9 @@ public class Project3 implements Serializable {
 		// get details from file
 		topology=args[1];
 		CurrentNodeId = Integer.parseInt(args[0]);
-		FileProp fp =new FileProp();
-		fp.readNodeDetails(CurrentNodeId, topology);
-		fp.readFileInformation();
+		//FileProp fp =new FileProp();
+		FileProp.readNodeDetails(CurrentNodeId, topology);
+		FileProp.readFileInformation();
 		server_port=Integer.parseInt(FileProp.map.get(CurrentNodeId).split(":")[1]);
 		Runnable serverTask = new Runnable() { 
 			 public void run() { 

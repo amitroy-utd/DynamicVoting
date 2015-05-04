@@ -13,10 +13,10 @@ public class FileProp implements Serializable{
 	private static final long serialVersionUID = 1L;
 	public static Map<Integer, String> map=new HashMap<Integer, String>();	
 	public  static int NodeID;
-	public  int num_files = 0;
-	public  int num_operations = 0;
-	public  int mean_delay=0;
-	public  int fraction_read =0;
+	public  static int num_files = 0;
+	public  static int num_operations = 0;
+	public static  int mean_delay=0;
+	public  static int fraction_read =0;
 	public  static int min_wait =0;
 	public  static int max_wait =0;
 	//public  static int reqID =0;
@@ -26,7 +26,7 @@ public class FileProp implements Serializable{
 	public static Map<String, FileAttributes> shared_read=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
 	public static Map<String, FileAttributes> exclusive_write=Collections.synchronizedMap(new TreeMap<String, FileAttributes>());
 		
-	public void readNodeDetails(int nodeId, String topology)
+	public static void readNodeDetails(int nodeId, String topology)
 	{
 		BufferedReader br;
 		NodeID=nodeId;
@@ -63,7 +63,7 @@ public class FileProp implements Serializable{
 		}
 	}
 	
-	public void readFileInformation(){
+	public static void readFileInformation(){
 		
 		
 		//Populate for common Map		
