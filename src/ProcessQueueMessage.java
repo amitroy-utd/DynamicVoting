@@ -312,7 +312,7 @@ public class ProcessQueueMessage extends Thread
 	        					 
 	        					 // replace the file with file received
 	        					 
-	        /*change path*/		 Path file_path = Paths.get(Project3.getCurrentDir()+"/"+FileProp.NodeID+"/", processObject.filename);
+	        /*change path*/		 Path file_path = Paths.get("./"+FileProp.NodeID+"/", processObject.filename);
 	        					 try
 	        					 {
 	        						 Files.write(file_path, processObject.contents);
@@ -349,7 +349,7 @@ public class ProcessQueueMessage extends Thread
 	                	//fetch the file and send the contents  
 	        			 if(FileProp.list_files.containsKey(processObject.filename))
 	        			 {
-	        				 Path file_path = Paths.get(Project3.getCurrentDir()+"/"+FileProp.NodeID+"/", processObject.filename);
+	        				 Path file_path = Paths.get("./"+FileProp.NodeID+"/", processObject.filename);
 	    					 try
 	    					 {
 	    						 byte[] local_content =  Files.readAllBytes(file_path);
@@ -382,7 +382,7 @@ public class ProcessQueueMessage extends Thread
 	                	
 	        			 if(FileProp.list_files.containsKey(processObject.filename))
 	        			 {
-/*change path*/				 Path file_path = Paths.get(Project3.getCurrentDir()+"/"+FileProp.NodeID+"/", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
+/*change path*/				 Path file_path = Paths.get("./"+FileProp.NodeID+"/", processObject.filename+"_"+processObject.nodeid+"_"+"temp");
 	    					 try
 	    					 {
 	    						Files.write(file_path, processObject.contents);

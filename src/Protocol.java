@@ -336,7 +336,7 @@ public class Protocol {
 		//read the file or write into the file
 		
 		FileReadingWriting.FileOperation(Project3.CurrentNodeId, filename, locktype,"log.txt");
-		Path file_path = Paths.get(Project3.getCurrentDir()+"/"+FileProp.NodeID+"/", filename);
+		Path file_path = Paths.get("./"+FileProp.NodeID+"/", filename);
 		byte[] local_content=null;
         try
         {
