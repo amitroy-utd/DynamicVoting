@@ -18,7 +18,7 @@ public class Protocol {
 	public void sendLockRequest(final int lock_type, final String file_name, int reqID,int waiting_time)
 	{
 		while(true){
-		FileAttributes fb=FileProp.list_files.get(filename);
+		FileAttributes fb=FileProp.list_files.get(file_name);
 		if(fb.locktype!=1)
 		{		
 			final int msgType=0;
