@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -18,6 +19,8 @@ public class Project3 implements Serializable {
 	static Socket socket1;
 	public static TreeMap<Integer, String> treemap = new TreeMap<Integer, String>();
 	public static TreeMap<Integer, String> origTreemap = new TreeMap<Integer, String>();
+	public static File dir2 = new File ("."); 
+	
 	public static void main(String[] args) throws Exception {
 		
 		// get details from file
@@ -125,5 +128,13 @@ public class Project3 implements Serializable {
 		    }
 			
 		}
+	}
+	public static String getCurrentDir(){
+		String path="";
+		 try { 
+			 path= dir2.getCanonicalPath();
+			 } catch(Exception e) {
+				 e.printStackTrace(); } 
+		 return path;
 	}
 } //end of class

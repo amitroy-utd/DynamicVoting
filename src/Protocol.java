@@ -162,7 +162,7 @@ public class Protocol {
 				 // check for stale copy and send file
 				 byte [] contents=null;
 				 int node_to_send=fas_obj.Q.get(0).nodeid;
-				 String tempfilename="./"+FileProp.NodeID+"/"+filename+"_"+node_to_send+"_temp";
+				 String tempfilename=Project3.getCurrentDir()+"/"+FileProp.NodeID+"/"+filename+"_"+node_to_send+"_temp";
 				 File f=new File(tempfilename);
 				 int staleFlag=0; // it's updated;
 				 if(fas_obj.M>fas_obj_listfile.verNum)
@@ -180,7 +180,7 @@ public class Protocol {
 						{							
 							if(f.exists())
 							 {
-								 File currentfile=new File("./"+FileProp.NodeID+"/"+filename);
+								 File currentfile=new File(Project3.getCurrentDir()+"/"+FileProp.NodeID+"/"+filename);
 								 //currentfile.delete();
 								 f.renameTo(currentfile);
 							 }
@@ -336,7 +336,7 @@ public class Protocol {
 		//read the file or write into the file
 		
 		FileReadingWriting.FileOperation(Project3.CurrentNodeId, filename, locktype,"log.txt");
-		Path file_path = Paths.get("./"+FileProp.NodeID+"/", filename);
+		Path file_path = Paths.get(Project3.getCurrentDir()+"/"+FileProp.NodeID+"/", filename);
 		byte[] local_content=null;
         try
         {
