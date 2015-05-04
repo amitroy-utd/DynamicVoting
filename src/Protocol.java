@@ -93,6 +93,7 @@ public class Protocol {
 			 fas_obj_listfile.currentReqID=0;
 			 
 			 FileAttributes fas_obj=new FileAttributes(current_reqid, filename, FileProp.NodeID, fas_obj_listfile.verNum, fas_obj_listfile.RU, fas_obj_listfile.M, fas_obj_listfile.P, fas_obj_listfile.Q, locktype, 0, fas_obj_listfile.requestNodeList);
+			 
 			 for (MessageStruct ms : ProcessQueueMessage.bufferResponse) 
 			 {
 				 // check lock ms.locktype==locktype

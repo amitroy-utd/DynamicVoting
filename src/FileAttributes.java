@@ -1,8 +1,9 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Set;
 
 
-public class FileAttributes {
+public class FileAttributes implements Serializable {
 	
 	int currentReqID;
 	String filename;
